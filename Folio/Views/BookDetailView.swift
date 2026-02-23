@@ -39,7 +39,7 @@ struct BookDetailView: View {
                                     .foregroundStyle(Color.secondaryText)
                             }
 
-                            Text(book.status == .historicalRead ? "Read" : book.status.rawValue.capitalized)
+                            Text(statusLabel(book.status))
                                 .font(.serifCaption())
                                 .foregroundStyle(Color.secondaryText)
                                 .padding(.horizontal, 8)
@@ -181,6 +181,9 @@ struct BookDetailView: View {
             Button("Paused") {
                 showPauseSheet = true
             }
+            Button("Wishlist") {
+                book.status = .wishlist
+            }
             Button("Cancel", role: .cancel) { }
         }
         .alert("Remove Book?", isPresented: $showDeleteConfirm) {
@@ -203,6 +206,14 @@ struct BookDetailView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Color.paper)
+        }
+    }
+
+    private func statusLabel(_ status: BookStatus) -> String {
+        switch status {
+        case .historicalRead: return "Read"
+        case .wishlist: return "Wishlist"
+        default: return status.rawValue.capitalized
         }
     }
 

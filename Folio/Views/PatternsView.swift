@@ -3,11 +3,15 @@ import SwiftData
 import Charts
 
 struct PatternsView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query private var allBooks: [Book]
     @Query(sort: \ReadingSession.startedAt, order: .reverse) private var allSessions: [ReadingSession]
 
     @State private var appeared: Bool = false
     @State private var showMonthlyReflection: Bool = false
+    @State private var bookSuggestions: [SuggestionEngine.BookSuggestion] = []
+    @State private var suggestionsLoading: Bool = false
+    @State private var savedSuggestionIds: Set<String> = []
 
     // MARK: - Derived Data
 
@@ -21,10 +25,6 @@ struct PatternsView: View {
 
     private var engagement: ReadingBehaviourEngine.EngagementStats {
         ReadingBehaviourEngine.computeEngagement(books: allBooks, sessions: allSessions)
-    }
-
-    private var suggestions: [SuggestionEngine.Suggestion] {
-        SuggestionEngine.generateSuggestions(books: allBooks, sessions: allSessions)
     }
 
     private var hourlyData: [HourlyReading] {
@@ -206,31 +206,28 @@ struct PatternsView: View {
                         }
                     }
 
-                    // MARK: Suggestions
-                    if !suggestions.isEmpty {
+                    // MARK: Suggestions (specific books + wishlist)
+                    if suggestionsLoading || !bookSuggestions.isEmpty {
                         divider
 
                         sectionBlock {
                             VStack(alignment: .leading, spacing: 12) {
                                 sectionHeader("Suggestions")
 
-                                ForEach(suggestions) { suggestion in
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(suggestion.mode.rawValue.uppercased())
-                                            .font(.system(size: 9, weight: .semibold))
-                                            .foregroundStyle(Color.secondaryText.opacity(0.7))
-                                            .kerning(0.6)
-
-                                        Text(suggestion.title)
-                                            .font(.system(.subheadline, design: .serif, weight: .semibold))
-                                            .foregroundStyle(Color.charcoal)
-
-                                        Text(suggestion.reason)
+                                if suggestionsLoading {
+                                    HStack(spacing: 8) {
+                                        ProgressView()
+                                            .tint(Color.warmAccent)
+                                            .scaleEffect(0.8)
+                                        Text("Finding books for you…")
                                             .font(.serifCaption())
                                             .foregroundStyle(Color.secondaryText)
-                                            .lineSpacing(2)
                                     }
-                                    .padding(.vertical, 6)
+                                    .padding(.vertical, 12)
+                                } else {
+                                    ForEach(bookSuggestions) { suggestion in
+                                        suggestionRow(suggestion)
+                                    }
                                 }
                             }
                         }
@@ -267,6 +264,11 @@ struct PatternsView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .onAppear { appeared = true }
+        .task(id: "\(allBooks.count)") {
+            suggestionsLoading = true
+            bookSuggestions = await SuggestionEngine.fetchBookSuggestions(books: allBooks, sessions: allSessions)
+            suggestionsLoading = false
+        }
         .sheet(isPresented: $showMonthlyReflection) {
             MonthlyReflectionSheet(reflectionText: monthlyReflectionText)
                 .presentationDetents([.medium])
@@ -276,6 +278,87 @@ struct PatternsView: View {
     }
 
     // MARK: - Helpers
+
+    private func suggestionRow(_ suggestion: SuggestionEngine.BookSuggestion) -> some View {
+        let isSaved = savedSuggestionIds.contains(suggestion.id) || allBooks.contains { $0.volumeId == suggestion.volumeId || ($0.title == suggestion.title && $0.authors == suggestion.authors) }
+        return HStack(alignment: .top, spacing: 12) {
+            BookCoverView(coverURL: suggestion.coverURL, cornerRadius: 8)
+                .frame(width: 52, height: 78)
+                .clipped()
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(suggestion.mode.rawValue.uppercased())
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color.secondaryText.opacity(0.7))
+                    .kerning(0.6)
+
+                Text(suggestion.title)
+                    .font(.system(.subheadline, design: .serif, weight: .semibold))
+                    .foregroundStyle(Color.charcoal)
+                    .lineLimit(2)
+
+                if !suggestion.authors.isEmpty {
+                    Text(suggestion.authors.joined(separator: ", "))
+                        .font(.serifCaption())
+                        .foregroundStyle(Color.secondaryText)
+                        .lineLimit(1)
+                }
+
+                Text(suggestion.reason)
+                    .font(.system(size: 11, design: .serif))
+                    .foregroundStyle(Color.secondaryText.opacity(0.9))
+                    .lineSpacing(2)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            Button {
+                if !isSaved {
+                    saveSuggestionToWishlist(suggestion)
+                }
+            } label: {
+                if isSaved {
+                    Text("Saved")
+                        .font(.system(size: 12, design: .serif))
+                        .foregroundStyle(Color.secondaryText.opacity(0.7))
+                } else {
+                    Text("Save")
+                        .font(.system(size: 12, design: .serif, weight: .medium))
+                        .foregroundStyle(Color.warmAccent)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(isSaved)
+        }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(Color.elevatedSurface, in: .rect(cornerRadius: 10))
+    }
+
+    private func saveSuggestionToWishlist(_ suggestion: SuggestionEngine.BookSuggestion) {
+        let book = Book(
+            title: suggestion.title,
+            authors: suggestion.authors,
+            publishYear: suggestion.publishYear,
+            language: suggestion.language,
+            coverURL: suggestion.coverURL,
+            volumeId: suggestion.volumeId,
+            isbn: suggestion.isbn,
+            bookDescription: suggestion.bookDescription,
+            subjects: suggestion.subjects,
+            status: .wishlist,
+            startedAt: nil,
+            finishedAt: nil,
+            pageCount: suggestion.pageCount
+        )
+        modelContext.insert(book)
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        withAnimation(.easeOut(duration: 0.2)) {
+            savedSuggestionIds.insert(suggestion.id)
+        }
+    }
 
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
