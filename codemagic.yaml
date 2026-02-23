@@ -38,6 +38,49 @@ workflows:
             COMPILER_INDEX_STORE_ENABLE=NO
       - name: Export IPA
         script: |
+          PROFILES_DIR="${HOME}/Library/MobileDevice/Provisioning Profiles"
+
+          get_profile_name() {
+            local bundle_id="$1"
+            local team_bundle_id="B54VQ6PV6L.${bundle_id}"
+            for profile in "$PROFILES_DIR"/*.mobileprovision; do
+              local decoded
+              decoded=$(security cms -D -i "$profile" 2>/dev/null)
+              if echo "$decoded" | grep -q "<string>${team_bundle_id}</string>"; then
+                echo "$decoded" | grep -A1 '<key>Name</key>' | grep '<string>' | \
+                  sed 's/.*<string>\(.*\)<\/string>.*/\1/' | head -1
+                return
+              fi
+            done
+          }
+
+          MAIN_PROFILE=$(get_profile_name "app.rork.reading-room")
+          WIDGET_PROFILE=$(get_profile_name "app.rork.reading-room.readingroomactivity")
+
+          cat > ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>teamID</key>
+              <string>B54VQ6PV6L</string>
+              <key>signingStyle</key>
+              <string>manual</string>
+              <key>uploadSymbols</key>
+              <true/>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>app.rork.reading-room</key>
+                  <string>${MAIN_PROFILE}</string>
+                  <key>app.rork.reading-room.readingroomactivity</key>
+                  <string>${WIDGET_PROFILE}</string>
+              </dict>
+          </dict>
+          </plist>
+          PLIST
+
           xcodebuild -exportArchive \
             -archivePath build/Folio.xcarchive \
             -exportPath build/ios/ipa \
