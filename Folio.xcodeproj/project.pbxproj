@@ -188,10 +188,10 @@
 			fileSystemSynchronizedGroups = (
 				105FC58C2E9EAD3200EA8BCF /* ReadingRoomTests */,
 			);
-			name = Folio;
+			name = FolioTests;
 			packageProductDependencies = (
 			);
-			productName = Folio;
+			productName = FolioTests;
 			productReference = 105FC5892E9EAD3200EA8BCF /* FolioTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -211,10 +211,10 @@
 			fileSystemSynchronizedGroups = (
 				105FC5962E9EAD3200EA8BCF /* ReadingRoomUITests */,
 			);
-			name = Folio;
+			name = FolioUITests;
 			packageProductDependencies = (
 			);
-			productName = Folio;
+			productName = FolioUITests;
 			productReference = 105FC5932E9EAD3200EA8BCF /* FolioUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -230,8 +230,8 @@
 			);
 			dependencies = (
 			);
-			name = Folio;
-			productName = Folio;
+			name = ReadingRoomActivity;
+			productName = ReadingRoomActivity;
 			productReference = XXC1273F8E5F4D5D403B54XX /* FolioActivity.appex */;
 			productType = "com.apple.product-type.app-extension";
 			fileSystemSynchronizedGroups = (
