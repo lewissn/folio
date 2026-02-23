@@ -10,14 +10,6 @@ workflows:
         bundle_identifier: app.rork.reading-room
       xcode: latest
     scripts:
-      - name: Create provisioning profile
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files \
-            app.rork.reading-room \
-            --type IOS_APP_STORE \
-            --create
-          keychain add-certificates
       - name: Build and archive
         script: |
           xcode-project use-profiles
@@ -27,7 +19,8 @@ workflows:
             -configuration Release \
             -sdk iphoneos \
             -archivePath build/Folio.xcarchive \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_STYLE=Automatic \
+            DEVELOPMENT_TEAM=B54VQ6PV6L
       - name: Export IPA
         script: |
           xcode-project build-ipa \
