@@ -35,6 +35,7 @@ struct LibraryView: View {
             case .read: return $0.status == .read || $0.status == .historicalRead
             case .paused: return $0.status == .paused
             case .historicalRead: return $0.status == .historicalRead
+            case .wishlist: return $0.status == .wishlist
             }
         }
 
@@ -106,6 +107,7 @@ struct LibraryView: View {
                             Text("Reading").tag(BookStatus.reading)
                             Text("Read").tag(BookStatus.read)
                             Text("Paused").tag(BookStatus.paused)
+                            Text("Wishlist").tag(BookStatus.wishlist)
                         }
                         .pickerStyle(.segmented)
 
@@ -389,6 +391,7 @@ struct LibraryView: View {
         case .read: return "No finished books yet."
         case .paused: return "No paused books."
         case .historicalRead: return "No historical books."
+        case .wishlist: return "No books in your wishlist yet.\nSave suggestions or search results to add them."
         }
     }
 }

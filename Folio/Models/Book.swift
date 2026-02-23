@@ -6,6 +6,7 @@ nonisolated enum BookStatus: String, Codable, Sendable, CaseIterable {
     case read
     case paused
     case historicalRead
+    case wishlist
 }
 
 nonisolated enum PauseReason: String, Codable, Sendable, CaseIterable, Identifiable {
@@ -26,6 +27,7 @@ class Book {
     var publishYear: Int?
     var language: String?
     var coverURL: String?
+    var volumeId: String?
     var isbn: [String]
     var bookDescription: String?
     var subjects: [String]
@@ -113,6 +115,7 @@ class Book {
         publishYear: Int? = nil,
         language: String? = nil,
         coverURL: String? = nil,
+        volumeId: String? = nil,
         isbn: [String] = [],
         bookDescription: String? = nil,
         subjects: [String] = [],
@@ -127,6 +130,7 @@ class Book {
         self.publishYear = publishYear
         self.language = language
         self.coverURL = coverURL
+        self.volumeId = volumeId
         self.isbn = isbn
         self.bookDescription = bookDescription
         self.subjects = subjects

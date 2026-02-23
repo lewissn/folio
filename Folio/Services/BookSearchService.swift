@@ -99,6 +99,16 @@ nonisolated enum BookSearchService {
         return try await searchOpenLibrary(query: query)
     }
 
+    /// Fetch one recommendation using a raw Google Books query (e.g. inauthor:X subject:Y).
+    /// Returns first result that passes banned-term filter; use for suggestions.
+    static func recommendOne(rawQuery: String) async throws -> SearchResult? {
+        let results = try await searchGoogleBooksWithRawQuery(rawQuery, maxResults: 10)
+        return results.first { result in
+            let fullText = "\(result.title) \(result.authors.joined(separator: " ")) \(result.subjects.joined(separator: " "))".lowercased()
+            return !bannedTerms.contains { fullText.contains($0) }
+        }
+    }
+
     // MARK: - Google Books (Primary)
 
     private static func searchGoogleBooks(query: String) async throws -> [SearchResult] {
@@ -160,12 +170,17 @@ nonisolated enum BookSearchService {
     }
 
     private static func searchGoogleBooksFallbackQuery(query: String) async throws -> [SearchResult] {
+        let results = try await searchGoogleBooksWithRawQuery(query, maxResults: 30)
+        return rankResults(results, query: query)
+    }
+
+    private static func searchGoogleBooksWithRawQuery(_ rawQuery: String, maxResults: Int = 30) async throws -> [SearchResult] {
         var components = URLComponents(string: "https://www.googleapis.com/books/v1/volumes")!
         components.queryItems = [
-            URLQueryItem(name: "q", value: query),
+            URLQueryItem(name: "q", value: rawQuery),
             URLQueryItem(name: "printType", value: "books"),
             URLQueryItem(name: "langRestrict", value: "en"),
-            URLQueryItem(name: "maxResults", value: "30"),
+            URLQueryItem(name: "maxResults", value: String(maxResults)),
             URLQueryItem(name: "orderBy", value: "relevance")
         ]
 
@@ -181,7 +196,7 @@ nonisolated enum BookSearchService {
         let response = try JSONDecoder().decode(GoogleBooksResponse.self, from: data)
         guard let items = response.items else { return [] }
 
-        let results = items.compactMap { item -> SearchResult? in
+        return items.compactMap { item -> SearchResult? in
             guard let title = item.volumeInfo.title else { return nil }
 
             let year = parseYear(from: item.volumeInfo.publishedDate)
@@ -203,8 +218,6 @@ nonisolated enum BookSearchService {
                 pageCount: item.volumeInfo.pageCount
             )
         }
-
-        return rankResults(results, query: query)
     }
 
     // MARK: - Open Library (Fallback)

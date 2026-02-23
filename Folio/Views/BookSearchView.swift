@@ -108,6 +108,7 @@ struct BookSearchView: View {
                 Button("Currently Reading") { addBook(result, status: .reading) }
                 Button("Already Read") { addBook(result, status: .historicalRead) }
                 Button("Paused") { addBook(result, status: .paused) }
+                Button("Add to Wishlist") { addBook(result, status: .wishlist) }
                 Button("Cancel", role: .cancel) { }
             }
         }
@@ -150,6 +151,7 @@ struct BookSearchView: View {
             publishYear: result.publishYear,
             language: result.language,
             coverURL: result.coverURL,
+            volumeId: result.id,
             isbn: result.isbn,
             bookDescription: result.bookDescription,
             subjects: result.subjects,

@@ -12,8 +12,9 @@ struct BookCoverView: View {
             if let image = cachedImage {
                 Color.clear
                     .overlay {
-                        image.resizable().aspectRatio(contentMode: .fill)
+                        image.resizable().scaledToFill()
                     }
+                    .clipped()
                     .clipShape(.rect(cornerRadius: cornerRadius))
             } else if let urlString = coverURL, !urlString.isEmpty {
                 Color(UIColor.secondarySystemBackground)
