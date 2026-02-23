@@ -81,6 +81,13 @@ extension Color {
             ? UIColor(red: 0.54, green: 0.50, blue: 0.44, alpha: 1)
             : UIColor(red: 0.78, green: 0.75, blue: 0.68, alpha: 1)
     })
+
+    // Slightly darker than elevatedSurface — intentional cover placeholder
+    static let coverPlaceholder = Color(UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0.13, green: 0.12, blue: 0.11, alpha: 1)
+            : UIColor(red: 0.91, green: 0.88, blue: 0.84, alpha: 1)
+    })
 }
 
 extension Font {
