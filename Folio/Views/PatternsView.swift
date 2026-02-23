@@ -324,7 +324,7 @@ struct PatternsView: View {
                         .foregroundStyle(Color.secondaryText.opacity(0.7))
                 } else {
                     Text("Save")
-                        .font(.system(size: 12, design: .serif, weight: .medium))
+                        .font(.system(size: 12, weight: .medium, design: .serif))
                         .foregroundStyle(Color.warmAccent)
                 }
             }
@@ -355,7 +355,7 @@ struct PatternsView: View {
         modelContext.insert(book)
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
-        withAnimation(.easeOut(duration: 0.2)) {
+        _ = withAnimation(.easeOut(duration: 0.2)) {
             savedSuggestionIds.insert(suggestion.id)
         }
     }

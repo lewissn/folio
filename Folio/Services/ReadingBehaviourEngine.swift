@@ -189,9 +189,14 @@ nonisolated enum ReadingBehaviourEngine {
 
     // MARK: - Mood Profile
 
+    private static func mostFrequentElement<T: Hashable>(_ elements: [T]) -> T? {
+        let counts = elements.reduce(into: [:]) { $0[$1, default: 0] += 1 }
+        return counts.max(by: { $0.value < $1.value })?.key
+    }
+
     private static func computeMoodProfile(sessions: [ReadingSession]) -> String? {
         let moods = sessions.compactMap { $0.moodWord }
-        return moods.mostFrequent
+        return mostFrequentElement(moods)
     }
 
     // MARK: - Reading Signature
@@ -298,8 +303,8 @@ nonisolated enum ReadingBehaviourEngine {
         }
 
         // Mood
-        let recentMoods = activeSessions.prefix(10).compactMap { $0.moodWord }
-        if let mood = recentMoods.mostFrequent {
+        let recentMoods = Array(activeSessions.prefix(10).compactMap { $0.moodWord })
+        if let mood = mostFrequentElement(recentMoods) {
             return "Recently, your sessions tend to feel \(mood)."
         }
 
@@ -341,7 +346,7 @@ nonisolated enum ReadingBehaviourEngine {
         let totalMinutes = monthSessions.reduce(0) { $0 + $1.durationMinutes }
         let booksEngaged = Set(monthSessions.compactMap { $0.book?.title })
         let moods = monthSessions.compactMap { $0.moodWord }
-        let topMood = moods.mostFrequent
+        let topMood = mostFrequentElement(moods)
 
         // Only count actively completed books (with sessions) finished this month
         let completedThisMonth = books.filter {
