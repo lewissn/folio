@@ -14,7 +14,6 @@ struct HomeView: View {
 
     @State private var sessionBook: Book?
     @State private var appeared: Bool = false
-    @State private var breathePhase: Bool = false
 
     private let timeOfDay = TimeOfDay.current
 
@@ -46,6 +45,21 @@ struct HomeView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
 
+                        // Page header — "Folio Reading Room"
+                        HStack(alignment: .lastTextBaseline, spacing: 14) {
+                            Text("Folio")
+                                .font(.system(.largeTitle, design: .serif, weight: .semibold))
+                                .foregroundStyle(Color.charcoal)
+                            Text("Reading Room")
+                                .font(.system(.body, design: .serif, weight: .regular))
+                                .foregroundStyle(Color.secondaryText)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 8)
+                        .padding(.bottom, 20)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.4), value: appeared)
+
                         // Primary focus card
                         Group {
                             if let book = currentBook {
@@ -54,29 +68,30 @@ struct HomeView: View {
                                 emptyState
                             }
                         }
-                        .padding(.top, 20)
                         .opacity(appeared ? 1 : 0)
                         .offset(y: appeared ? 0 : 6)
                         .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
 
-                        // Dynamic insight line
+                        // Dynamic insight — whisper quiet, one line
                         if let insight = dynamicInsight {
                             Text(insight)
-                                .font(.system(.subheadline, design: .serif))
-                                .foregroundStyle(Color.secondaryText)
-                                .lineSpacing(2)
-                                .padding(.top, 16)
+                                .font(.system(size: 12.5, design: .serif))
+                                .foregroundStyle(Color.secondaryText.opacity(0.65))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .padding(.top, 14)
                                 .opacity(appeared ? 1 : 0)
                                 .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
                         }
 
-                        // Temporal awareness
+                        // Temporal awareness (only when no insight)
                         if let temporal = temporalLine, dynamicInsight == nil {
                             Text(temporal)
-                                .font(.system(.subheadline, design: .serif))
-                                .foregroundStyle(Color.secondaryText.opacity(0.8))
-                                .lineSpacing(2)
-                                .padding(.top, 16)
+                                .font(.system(size: 12.5, design: .serif))
+                                .foregroundStyle(Color.secondaryText.opacity(0.6))
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                                .padding(.top, 14)
                                 .opacity(appeared ? 1 : 0)
                                 .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
                         }
@@ -116,27 +131,32 @@ struct HomeView: View {
                             }
                         }
 
-                        // Bottom spacer so content clears the pinned quote
-                        Spacer(minLength: 200)
+                        // Spacer to clear pinned quote block
+                        Spacer(minLength: 220)
                     }
                     .padding(.horizontal)
                 }
                 .background(AtmosphericBackground(timeOfDay: timeOfDay))
 
-                // Quote just above tab bar, centered
-                quoteBlock
-                    .padding(.bottom, 56)
-                    .opacity(appeared ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.5).delay(0.45), value: appeared)
+                // Quote anchored above tab bar — separated by hairline
+                VStack(spacing: 0) {
+                    Rectangle()
+                        .fill(Color.hairline)
+                        .frame(height: 0.5)
+                        .padding(.horizontal, 32)
+                    quoteBlock
+                        .padding(.top, 14)
+                        .padding(.bottom, 8)
+                }
+                .padding(.bottom, 56)
+                .opacity(appeared ? 1 : 0)
+                .animation(.easeInOut(duration: 0.5).delay(0.45), value: appeared)
             }
-            .navigationTitle("Folio")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
             appeared = true
-            withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
-                breathePhase = true
-            }
         }
         .fullScreenCover(item: $sessionBook) { book in
             SessionView(book: book)
@@ -146,65 +166,60 @@ struct HomeView: View {
     // MARK: — Subviews
 
     private func currentBookCard(_ book: Book) -> some View {
-        VStack(spacing: 0) {
-            // Cover — single focal point
-            BookCoverView(coverURL: book.coverURL, cornerRadius: 12)
-                .frame(width: 120, height: 180)
+        HStack(alignment: .top, spacing: 16) {
+
+            // Cover — fixed silhouette, never touches card edges
+            BookCoverView(coverURL: book.coverURL, cornerRadius: 10)
+                .frame(width: 96, height: 132)
                 .clipped()
-                .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
-                .padding(.top, 20)
-                .padding(.bottom, 18)
+                .shadow(color: .black.opacity(0.06), radius: 8, y: 3)
 
-            // Title and author — calm hierarchy
-            Text(book.title)
-                .font(.system(.body, design: .serif, weight: .semibold))
-                .foregroundStyle(Color.charcoal)
-                .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            // Text column — title, author, metadata, then CTA
+            VStack(alignment: .leading, spacing: 0) {
+                Text(book.title)
+                    .font(.system(.body, design: .serif, weight: .semibold))
+                    .foregroundStyle(Color.charcoal)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
 
-            if !book.authors.isEmpty {
-                Text(book.authors.joined(separator: ", "))
-                    .font(.system(.subheadline, design: .serif))
-                    .foregroundStyle(Color.secondaryText)
-                    .padding(.top, 4)
+                if !book.authors.isEmpty {
+                    Text(book.authors.joined(separator: ", "))
+                        .font(.system(.subheadline, design: .serif))
+                        .foregroundStyle(Color.secondaryText.opacity(0.8))
+                        .padding(.top, 4)
+                }
+
+                if !book.sessions.isEmpty {
+                    let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
+                    Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s") · \(totalMin) min")
+                        .font(.system(size: 11, design: .serif))
+                        .foregroundStyle(Color.secondaryText.opacity(0.65))
+                        .padding(.top, 6)
+                }
+
+                Spacer(minLength: 12)
+
+                Button {
+                    sessionBook = book
+                } label: {
+                    Text("Continue Reading")
+                        .font(.system(.subheadline, design: .serif, weight: .medium))
+                        .foregroundStyle(Color.paper)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Color.charcoal, in: .rect(cornerRadius: 10))
+                }
+                .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
             }
-
-            if !book.sessions.isEmpty {
-                let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
-                Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s") · \(totalMin) min")
-                    .font(.system(size: 11, design: .serif))
-                    .foregroundStyle(Color.secondaryText.opacity(0.85))
-                    .padding(.top, 6)
-            }
-
-            // Continue Reading — beneath the cover, one clear action
-            Button {
-                sessionBook = book
-            } label: {
-                Text("Continue Reading")
-                    .font(.system(.subheadline, design: .serif, weight: .medium))
-                    .foregroundStyle(Color.paper)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.charcoal, in: .rect(cornerRadius: 12))
-            }
-            .padding(.top, 20)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
-            .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
+            .frame(maxHeight: .infinity)
         }
+        .padding(18)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.elevatedSurface)
-                .stroke(Color.hairline, lineWidth: 1)
+                .stroke(Color.hairline, lineWidth: 0.5)
         )
-        .overlay(alignment: .topTrailing) {
-            BookmarkRibbon()
-                .frame(width: 24, height: 40)
-                .offset(x: 8, y: -6)
-        }
     }
 
     private var emptyState: some View {
@@ -228,7 +243,7 @@ struct HomeView: View {
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color.elevatedSurface)
-                .stroke(Color.hairline, lineWidth: 1)
+                .stroke(Color.hairline, lineWidth: 0.5)
         )
     }
 
@@ -245,20 +260,20 @@ struct HomeView: View {
     }
 
     private var quoteBlock: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 5) {
             Text(dailyQuote.text)
-                .font(.system(size: 12.5, weight: .regular, design: .serif))
+                .font(.system(size: 12, weight: .regular, design: .serif))
                 .italic()
-                .foregroundStyle(Color.secondaryText.opacity(0.5))
+                .foregroundStyle(Color.secondaryText.opacity(0.45))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
 
             Text(dailyQuote.author)
-                .font(.system(size: 11.5, weight: .regular, design: .serif))
-                .foregroundStyle(Color.secondaryText.opacity(0.5))
+                .font(.system(size: 10.5, weight: .regular, design: .serif))
+                .foregroundStyle(Color.secondaryText.opacity(0.4))
         }
+        .frame(maxWidth: 320)
         .frame(maxWidth: .infinity)
-        .frame(maxWidth: 340)
     }
 
     private func sessionDescription(_ session: ReadingSession) -> String {
@@ -277,27 +292,5 @@ struct HomeView: View {
             when = f.string(from: session.startedAt)
         }
         return "\(duration) · \(when)"
-    }
-}
-
-// MARK: — Subtle bookmark accent (tasteful, not loud)
-private struct BookmarkRibbon: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(
-                LinearGradient(
-                    colors: [
-                        Color.warmAccent.opacity(0.35),
-                        Color.warmAccent.opacity(0.2)
-                    ],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .overlay(
-                RoundedRectangle(cornerRadius: 2)
-                    .stroke(Color.warmAccent.opacity(0.2), lineWidth: 0.5)
-            )
     }
 }
