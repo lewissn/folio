@@ -28,15 +28,6 @@ struct HomeView: View {
     private var otherBooksCount: Int { max(0, readingBooks.count - 1) }
     private var lastSession: ReadingSession? { allSessions.first }
 
-    private var greeting: String {
-        switch timeOfDay {
-        case .morning:   return "Morning reading"
-        case .afternoon: return "Afternoon reading"
-        case .evening:   return "Evening reading"
-        case .lateNight: return "Late night reading"
-        }
-    }
-
     private var dynamicInsight: String? {
         ReadingBehaviourEngine.generateHomeInsight(books: allBooks, sessions: allSessions)
     }
@@ -54,15 +45,6 @@ struct HomeView: View {
             ZStack(alignment: .bottom) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-
-                        // Greeting beneath the navigation title
-                        Text(greeting)
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundStyle(Color.secondaryText)
-                            .lineSpacing(2)
-                            .padding(.top, 2)
-                            .opacity(appeared ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.5), value: appeared)
 
                         // Primary focus card
                         Group {
@@ -134,16 +116,16 @@ struct HomeView: View {
                             }
                         }
 
-                        // Bottom spacer so content doesn't sit under pinned quote
-                        Spacer(minLength: 140)
+                        // Bottom spacer so content clears the pinned quote
+                        Spacer(minLength: 200)
                     }
                     .padding(.horizontal)
                 }
                 .background(AtmosphericBackground(timeOfDay: timeOfDay))
 
-                // Quote pinned above tab bar, centered
+                // Quote just above tab bar, centered
                 quoteBlock
-                    .padding(.bottom, 100)
+                    .padding(.bottom, 56)
                     .opacity(appeared ? 1 : 0)
                     .animation(.easeInOut(duration: 0.5).delay(0.45), value: appeared)
             }
@@ -165,7 +147,7 @@ struct HomeView: View {
 
     private func currentBookCard(_ book: Book) -> some View {
         VStack(spacing: 0) {
-            // Cover — single focal point, fixed aspect so height is always uniform
+            // Cover — single focal point
             BookCoverView(coverURL: book.coverURL, cornerRadius: 12)
                 .frame(width: 120, height: 180)
                 .clipped()
@@ -218,6 +200,11 @@ struct HomeView: View {
                 .fill(Color.elevatedSurface)
                 .stroke(Color.hairline, lineWidth: 1)
         )
+        .overlay(alignment: .topTrailing) {
+            BookmarkRibbon()
+                .frame(width: 24, height: 40)
+                .offset(x: 8, y: -6)
+        }
     }
 
     private var emptyState: some View {
@@ -290,5 +277,27 @@ struct HomeView: View {
             when = f.string(from: session.startedAt)
         }
         return "\(duration) · \(when)"
+    }
+}
+
+// MARK: — Subtle bookmark accent (tasteful, not loud)
+private struct BookmarkRibbon: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.warmAccent.opacity(0.35),
+                        Color.warmAccent.opacity(0.2)
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .overlay(
+                RoundedRectangle(cornerRadius: 2)
+                    .stroke(Color.warmAccent.opacity(0.2), lineWidth: 0.5)
+            )
     }
 }
