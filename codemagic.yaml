@@ -8,6 +8,8 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: app.rork.reading-room
+        provisioning_profile: Folio App Store
+        certificate: Folio Distribution
       xcode: latest
     scripts:
       - name: Build and archive
