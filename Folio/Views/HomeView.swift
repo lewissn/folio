@@ -2,7 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct HomeView: View {
-    @Query(filter: #Predicate<Book> { $0.statusRaw == "reading" }, sort: \Book.startedAt, order: .reverse)
+    @Binding var selectedTab: Int
+
+    @Query(filter: #Predicate<Book> { $0.statusRaw == "reading" }, sort: \Book.createdAt, order: .reverse)
     private var readingBooks: [Book]
 
     @Query(sort: \ReadingSession.startedAt, order: .reverse)
@@ -14,13 +16,22 @@ struct HomeView: View {
 
     private let timeOfDay = TimeOfDay.current
 
-    private var currentBook: Book? { readingBooks.first }
+    // Most recently opened reading book
+    private var currentBook: Book? {
+        readingBooks.max(by: {
+            ($0.lastOpenedAt ?? $0.startedAt ?? .distantPast) <
+            ($1.lastOpenedAt ?? $1.startedAt ?? .distantPast)
+        })
+    }
+
+    private var otherBooksCount: Int { max(0, readingBooks.count - 1) }
+    private var lastSession: ReadingSession? { allSessions.first }
 
     private var greeting: String {
         switch timeOfDay {
-        case .morning: return "Morning reading"
+        case .morning:   return "Morning reading"
         case .afternoon: return "Afternoon reading"
-        case .evening: return "Evening reading"
+        case .evening:   return "Evening reading"
         case .lateNight: return "Late night reading"
         }
     }
@@ -41,13 +52,15 @@ struct HomeView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
-                VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 0) {
+
+                // 1 + 2 · Context line + title
+                VStack(alignment: .leading, spacing: 10) {
                     Text(greeting)
-                        .font(.subheadline)
+                        .font(.system(.footnote, design: .serif))
                         .foregroundStyle(Color.secondaryText)
 
-                    Text("Reading Room")
+                    Text("Folio")
                         .font(.serifLargeTitle())
                         .foregroundStyle(Color.charcoal)
                 }
@@ -55,27 +68,65 @@ struct HomeView: View {
                 .offset(y: appeared ? 0 : 8)
                 .animation(.easeInOut(duration: 0.5), value: appeared)
 
-                if let book = currentBook {
-                    currentBookCard(book)
-                        .opacity(appeared ? 1 : 0)
-                        .offset(y: appeared ? 0 : 6)
-                        .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
-                } else {
-                    emptyState
-                        .opacity(appeared ? 1 : 0)
-                        .offset(y: appeared ? 0 : 6)
-                        .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
+                // 3 · Primary focus card
+                Group {
+                    if let book = currentBook {
+                        currentBookCard(book)
+                    } else {
+                        emptyState
+                    }
                 }
+                .padding(.top, 26)
+                .opacity(appeared ? 1 : 0)
+                .offset(y: appeared ? 0 : 6)
+                .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
 
+                // 4 · Insight line (sans — intentional contrast to book content)
                 if let insight = insightText {
                     Text(insight)
-                        .font(.system(.subheadline, design: .serif))
+                        .font(.subheadline)
                         .foregroundStyle(Color.secondaryText)
-                        .lineSpacing(2)
+                        .padding(.top, 18)
                         .opacity(appeared ? 1 : 0)
                         .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
                 }
 
+                // "N other books in progress" link
+                if otherBooksCount > 0 {
+                    Button {
+                        selectedTab = 1
+                    } label: {
+                        Text("\(otherBooksCount) other book\(otherBooksCount == 1 ? "" : "s") in progress")
+                            .font(.serifCaption())
+                            .foregroundStyle(Color.secondaryText)
+                            .underline()
+                    }
+                    .padding(.top, 6)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
+                }
+
+                // 5 + 6 · Divider + last session (only when a book is active)
+                if currentBook != nil {
+                    GeometryReader { geo in
+                        Rectangle()
+                            .fill(Color.hairline)
+                            .frame(width: geo.size.width * 0.65, height: 0.5)
+                    }
+                    .frame(height: 0.5)
+                    .padding(.top, 16)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.5).delay(0.35), value: appeared)
+
+                    if let session = lastSession {
+                        lastSessionBlock(session)
+                            .padding(.top, 14)
+                            .opacity(appeared ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.5).delay(0.35), value: appeared)
+                    }
+                }
+
+                // 7 · Breathing space
                 Spacer(minLength: 40)
             }
             .padding(.horizontal)
@@ -93,12 +144,18 @@ struct HomeView: View {
         }
     }
 
+    // MARK: — Subviews
+
     private func currentBookCard(_ book: Book) -> some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(alignment: .top, spacing: 16) {
                 BookCoverView(coverURL: book.coverURL)
                     .frame(width: 80, height: 120)
-                    .shadow(color: .black.opacity(breathePhase ? 0.08 : 0.04), radius: breathePhase ? 12 : 8, y: breathePhase ? 6 : 4)
+                    .shadow(
+                        color: .black.opacity(breathePhase ? 0.05 : 0.02),
+                        radius: breathePhase ? 10 : 6,
+                        y: breathePhase ? 5 : 3
+                    )
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(book.title)
@@ -108,14 +165,14 @@ struct HomeView: View {
 
                     if !book.authors.isEmpty {
                         Text(book.authors.joined(separator: ", "))
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                     }
 
                     if !book.sessions.isEmpty {
                         let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
                         Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s"), \(totalMin) min")
-                            .font(.caption)
+                            .font(.serifCaption())
                             .foregroundStyle(Color.warmAccent)
                             .padding(.top, 2)
                     }
@@ -128,7 +185,7 @@ struct HomeView: View {
                 sessionBook = book
             } label: {
                 Text("Begin Session")
-                    .font(.system(.body, weight: .medium))
+                    .font(.system(.body, design: .serif, weight: .medium))
                     .foregroundStyle(Color.paper)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -141,32 +198,62 @@ struct HomeView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.elevatedSurface)
                 .stroke(Color.hairline, lineWidth: 1)
-                .shadow(color: .black.opacity(0.03), radius: 4, y: 2)
         )
     }
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Image(systemName: "book.closed")
-                .font(.system(size: 36))
-                .foregroundStyle(Color.warmAccent)
+                .font(.system(size: 30))
+                .foregroundStyle(Color.warmAccent.opacity(0.45))
 
             Text("No book in progress")
                 .font(.serifHeadline())
                 .foregroundStyle(Color.charcoal)
 
             Text("Add a book from the Library to begin.")
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .serif))
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 28)
         .padding(.horizontal, 20)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.elevatedSurface)
                 .stroke(Color.hairline, lineWidth: 1)
         )
+    }
+
+    private func lastSessionBlock(_ session: ReadingSession) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Last session")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Color.secondaryText)
+                .textCase(.uppercase)
+                .kerning(0.8)
+
+            Text(sessionDescription(session))
+                .font(.system(.subheadline, design: .serif))
+                .foregroundStyle(Color.secondaryText)
+        }
+    }
+
+    private func sessionDescription(_ session: ReadingSession) -> String {
+        let duration = "\(session.durationMinutes) min"
+        let when: String
+        let cal = Calendar.current
+        if cal.isDateInToday(session.startedAt) {
+            let f = DateFormatter(); f.dateFormat = "HH:mm"
+            when = "Today, \(f.string(from: session.startedAt))"
+        } else if cal.isDateInYesterday(session.startedAt) {
+            let f = DateFormatter(); f.dateFormat = "HH:mm"
+            when = "Yesterday, \(f.string(from: session.startedAt))"
+        } else {
+            let f = DateFormatter(); f.dateFormat = "d MMM, HH:mm"
+            when = f.string(from: session.startedAt)
+        }
+        return "\(duration) — \(when)"
     }
 }

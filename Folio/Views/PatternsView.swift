@@ -207,7 +207,7 @@ struct PatternsView: View {
                 VStack(alignment: .leading, spacing: 32) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Reading Signature")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
 
                         Text(readingSignature)
@@ -223,7 +223,7 @@ struct PatternsView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Rhythm")
-                                .font(.subheadline)
+                                .font(.system(.subheadline, design: .serif))
                                 .foregroundStyle(Color.secondaryText)
 
                             Chart(hourlyData) { item in
@@ -250,7 +250,7 @@ struct PatternsView: View {
 
                             let avgSession = allSessions.reduce(0) { $0 + $1.durationMinutes } / max(allSessions.count, 1)
                             Text("Average session: \(avgSession) min")
-                                .font(.caption)
+                                .font(.serifCaption())
                                 .foregroundStyle(Color.secondaryText)
                         }
                         .opacity(appeared ? 1 : 0)
@@ -260,7 +260,7 @@ struct PatternsView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Completion")
-                                .font(.subheadline)
+                                .font(.system(.subheadline, design: .serif))
                                 .foregroundStyle(Color.secondaryText)
 
                             HStack(spacing: 32) {
@@ -269,7 +269,7 @@ struct PatternsView: View {
                                         .font(.serifTitle(.title))
                                         .foregroundStyle(Color.charcoal)
                                     Text("Finished")
-                                        .font(.caption)
+                                        .font(.serifCaption())
                                         .foregroundStyle(Color.secondaryText)
                                 }
 
@@ -278,7 +278,7 @@ struct PatternsView: View {
                                         .font(.serifTitle(.title))
                                         .foregroundStyle(Color.charcoal)
                                     Text("Paused")
-                                        .font(.caption)
+                                        .font(.serifCaption())
                                         .foregroundStyle(Color.secondaryText)
                                 }
                             }
@@ -292,7 +292,7 @@ struct PatternsView: View {
 
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Reading Seasons")
-                                .font(.subheadline)
+                                .font(.system(.subheadline, design: .serif))
                                 .foregroundStyle(Color.secondaryText)
 
                             ForEach(readingSeasons) { season in
@@ -309,7 +309,7 @@ struct PatternsView: View {
                                     }
 
                                     Text("\(season.sessionCount) sessions, \(season.totalMinutes) min")
-                                        .font(.caption)
+                                        .font(.serifCaption())
                                         .foregroundStyle(Color.secondaryText)
                                 }
                                 .padding(.vertical, 4)
@@ -324,13 +324,13 @@ struct PatternsView: View {
 
                         VStack(alignment: .leading, spacing: 10) {
                             Text("Themes")
-                                .font(.subheadline)
+                                .font(.system(.subheadline, design: .serif))
                                 .foregroundStyle(Color.secondaryText)
 
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 70), spacing: 8)], alignment: .leading, spacing: 8) {
                                 ForEach(reflectionThemes, id: \.self) { theme in
                                     Text(theme)
-                                        .font(.caption)
+                                        .font(.serifCaption())
                                         .foregroundStyle(Color.charcoal)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 6)
@@ -350,7 +350,7 @@ struct PatternsView: View {
                         } label: {
                             HStack {
                                 Text("Reflect on this month")
-                                    .font(.system(.body, weight: .medium))
+                                    .font(.system(.body, design: .serif, weight: .medium))
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.caption)

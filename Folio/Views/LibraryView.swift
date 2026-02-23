@@ -124,7 +124,7 @@ struct LibraryView: View {
                 .foregroundStyle(Color.warmAccent)
 
             Text(emptyMessage)
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .serif))
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
         }

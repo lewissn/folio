@@ -26,7 +26,7 @@ struct PauseReasonSheet: View {
                             }
                         } label: {
                             Text(reason.rawValue)
-                                .font(.subheadline)
+                                .font(.system(.subheadline, design: .serif))
                                 .foregroundStyle(selectedReasons.contains(reason) ? Color.paper : Color.charcoal)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 8)
@@ -41,7 +41,7 @@ struct PauseReasonSheet: View {
 
                 if selectedReasons.contains(.other) {
                     TextField("What happened?", text: $otherText, axis: .vertical)
-                        .font(.body)
+                        .font(.serifBody())
                         .lineLimit(2...4)
                         .foregroundStyle(Color.charcoal)
                 }
