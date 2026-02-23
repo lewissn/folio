@@ -29,7 +29,8 @@ workflows:
             -sdk iphoneos \
             -archivePath build/Folio.xcarchive \
             CODE_SIGN_STYLE=Manual \
-            DEVELOPMENT_TEAM=B54VQ6PV6L
+            DEVELOPMENT_TEAM=B54VQ6PV6L \
+            COMPILER_INDEX_STORE_ENABLE=NO
       - name: Export IPA
         script: |
           xcode-project build-ipa \
