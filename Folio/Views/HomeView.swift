@@ -45,102 +45,120 @@ struct HomeView: View {
         ReadingBehaviourEngine.generateTemporalLine(sessions: allSessions)
     }
 
+    private var dailyQuote: (text: String, author: String) {
+        DailyQuotes.today
+    }
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
 
-                // Title + greeting — tightened typographically
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Folio")
-                        .font(.serifTitle(.title))
-                        .tracking(-0.3)
-                        .foregroundStyle(Color.charcoal)
-
+                    // Greeting beneath the navigation title
                     Text(greeting)
                         .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(Color.secondaryText)
                         .lineSpacing(2)
-                }
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 8)
-                .animation(.easeInOut(duration: 0.5), value: appeared)
+                        .padding(.top, 2)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.5), value: appeared)
 
-                // Primary focus card
-                Group {
-                    if let book = currentBook {
-                        currentBookCard(book)
-                    } else {
-                        emptyState
+                    // Primary focus card
+                    Group {
+                        if let book = currentBook {
+                            currentBookCard(book)
+                        } else {
+                            emptyState
+                        }
                     }
-                }
-                .padding(.top, 20)
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 6)
-                .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
+                    .padding(.top, 20)
+                    .opacity(appeared ? 1 : 0)
+                    .offset(y: appeared ? 0 : 6)
+                    .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
 
-                // Dynamic insight line
-                if let insight = dynamicInsight {
-                    Text(insight)
-                        .font(.system(.subheadline, design: .serif))
-                        .foregroundStyle(Color.secondaryText)
-                        .lineSpacing(2)
-                        .padding(.top, 16)
-                        .opacity(appeared ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
-                }
-
-                // Temporal awareness
-                if let temporal = temporalLine, dynamicInsight == nil {
-                    Text(temporal)
-                        .font(.system(.subheadline, design: .serif))
-                        .foregroundStyle(Color.secondaryText.opacity(0.8))
-                        .lineSpacing(2)
-                        .padding(.top, 16)
-                        .opacity(appeared ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
-                }
-
-                // Other books link
-                if otherBooksCount > 0 {
-                    Button {
-                        selectedTab = 1
-                    } label: {
-                        Text("\(otherBooksCount) other book\(otherBooksCount == 1 ? "" : "s") in progress")
-                            .font(.serifCaption())
+                    // Dynamic insight line
+                    if let insight = dynamicInsight {
+                        Text(insight)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
-                            .underline()
-                    }
-                    .padding(.top, 6)
-                    .opacity(appeared ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
-                }
-
-                // Divider + last session
-                if currentBook != nil {
-                    GeometryReader { geo in
-                        Rectangle()
-                            .fill(Color.hairline)
-                            .frame(width: geo.size.width * 0.65, height: 0.5)
-                    }
-                    .frame(height: 0.5)
-                    .padding(.top, 16)
-                    .opacity(appeared ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.5).delay(0.35), value: appeared)
-
-                    if let session = lastSession {
-                        lastSessionBlock(session)
-                            .padding(.top, 14)
+                            .lineSpacing(2)
+                            .padding(.top, 16)
                             .opacity(appeared ? 1 : 0)
-                            .animation(.easeInOut(duration: 0.5).delay(0.35), value: appeared)
+                            .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
                     }
-                }
 
-                Spacer(minLength: 40)
+                    // Temporal awareness
+                    if let temporal = temporalLine, dynamicInsight == nil {
+                        Text(temporal)
+                            .font(.system(.subheadline, design: .serif))
+                            .foregroundStyle(Color.secondaryText.opacity(0.8))
+                            .lineSpacing(2)
+                            .padding(.top, 16)
+                            .opacity(appeared ? 1 : 0)
+                            .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
+                    }
+
+                    // Other books link
+                    if otherBooksCount > 0 {
+                        Button {
+                            selectedTab = 1
+                        } label: {
+                            Text("\(otherBooksCount) other book\(otherBooksCount == 1 ? "" : "s") in progress")
+                                .font(.serifCaption())
+                                .foregroundStyle(Color.secondaryText)
+                                .underline()
+                        }
+                        .padding(.top, 6)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
+                    }
+
+                    // Divider + last session
+                    if currentBook != nil {
+                        GeometryReader { geo in
+                            Rectangle()
+                                .fill(Color.hairline)
+                                .frame(width: geo.size.width * 0.65, height: 0.5)
+                        }
+                        .frame(height: 0.5)
+                        .padding(.top, 16)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.5).delay(0.35), value: appeared)
+
+                        if let session = lastSession {
+                            lastSessionBlock(session)
+                                .padding(.top, 14)
+                                .opacity(appeared ? 1 : 0)
+                                .animation(.easeInOut(duration: 0.5).delay(0.35), value: appeared)
+                        }
+                    }
+
+                    // Daily quote — subtle, atmospheric
+                    VStack(spacing: 4) {
+                        Text(dailyQuote.text)
+                            .font(.system(size: 12.5, weight: .regular, design: .serif))
+                            .italic()
+                            .foregroundStyle(Color.secondaryText.opacity(0.6))
+                            .multilineTextAlignment(.leading)
+                            .lineSpacing(3)
+
+                        Text(dailyQuote.author)
+                            .font(.system(size: 11, weight: .regular, design: .serif))
+                            .foregroundStyle(Color.secondaryText.opacity(0.4))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 48)
+                    .opacity(appeared ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.5).delay(0.45), value: appeared)
+
+                    Spacer(minLength: 32)
+                }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
-            .padding(.top, 34)
+            .background(AtmosphericBackground(timeOfDay: timeOfDay))
+            .navigationTitle("Folio")
+            .navigationBarTitleDisplayMode(.large)
         }
-        .background(AtmosphericBackground(timeOfDay: timeOfDay))
         .onAppear {
             appeared = true
             withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
@@ -155,14 +173,18 @@ struct HomeView: View {
     // MARK: — Subviews
 
     private func currentBookCard(_ book: Book) -> some View {
-        HStack(alignment: .top, spacing: 0) {
-            // Cover fills card height
-            BookCoverView(coverURL: book.coverURL, cornerRadius: 0)
-                .frame(width: 100)
-                .clipped()
+        HStack(alignment: .top, spacing: 16) {
+            // Cover — constrained inside card padding
+            BookCoverView(coverURL: book.coverURL, cornerRadius: 10)
+                .frame(width: 88, height: 130)
+                .shadow(
+                    color: .black.opacity(breathePhase ? 0.05 : 0.02),
+                    radius: breathePhase ? 8 : 5,
+                    y: breathePhase ? 4 : 2
+                )
 
             // Right side: metadata + button
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(book.title)
                     .font(.serifHeadline())
                     .foregroundStyle(Color.charcoal)
@@ -188,7 +210,7 @@ struct HomeView: View {
                     .padding(.top, 2)
                 }
 
-                Spacer(minLength: 8)
+                Spacer(minLength: 6)
 
                 Button {
                     sessionBook = book
@@ -202,19 +224,12 @@ struct HomeView: View {
                 }
                 .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
             }
-            .padding(16)
         }
-        .frame(minHeight: 150)
+        .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color.elevatedSurface)
                 .stroke(Color.hairline, lineWidth: 1)
-        )
-        .clipShape(.rect(cornerRadius: 14))
-        .shadow(
-            color: .black.opacity(breathePhase ? 0.04 : 0.02),
-            radius: breathePhase ? 8 : 5,
-            y: breathePhase ? 4 : 2
         )
     }
 
