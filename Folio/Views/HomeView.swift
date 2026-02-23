@@ -44,8 +44,10 @@ struct HomeView: View {
         }
         let totalMinutes = allSessions.reduce(0) { $0 + $1.durationMinutes }
         let avg = totalMinutes / max(allSessions.count, 1)
-        if avg > 0 {
-            return "Your sessions average around \(avg) minutes."
+        if avg > 0 && avg < 10 {
+            return "You've been reading in short bursts."
+        } else if avg >= 10 {
+            return "Your sessions tend to be \(avg < 20 ? "brief" : "substantial")."
         }
         return nil
     }
@@ -55,13 +57,15 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 0) {
 
                 // 1 + 2 · Context line + title
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 7) {
                     Text(greeting)
-                        .font(.system(.footnote, design: .serif))
+                        .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(Color.secondaryText)
+                        .lineSpacing(2)
 
                     Text("Folio")
                         .font(.serifLargeTitle())
+                        .tracking(0.5)
                         .foregroundStyle(Color.charcoal)
                 }
                 .opacity(appeared ? 1 : 0)
@@ -76,7 +80,7 @@ struct HomeView: View {
                         emptyState
                     }
                 }
-                .padding(.top, 26)
+                .padding(.top, 22)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 6)
                 .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
@@ -130,7 +134,7 @@ struct HomeView: View {
                 Spacer(minLength: 40)
             }
             .padding(.horizontal)
-            .padding(.top, 60)
+            .padding(.top, 34)
         }
         .background(AtmosphericBackground(timeOfDay: timeOfDay))
         .onAppear {
@@ -171,10 +175,16 @@ struct HomeView: View {
 
                     if !book.sessions.isEmpty {
                         let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
-                        Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s"), \(totalMin) min")
-                            .font(.serifCaption())
-                            .foregroundStyle(Color.warmAccent)
-                            .padding(.top, 2)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("SESSIONS")
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(Color.secondaryText.opacity(0.7))
+                                .kerning(0.6)
+                            Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s") · \(totalMin) min total")
+                                .font(.system(size: 11, design: .serif))
+                                .foregroundStyle(Color.warmAccent)
+                        }
+                        .padding(.top, 2)
                     }
                 }
 
@@ -184,11 +194,11 @@ struct HomeView: View {
             Button {
                 sessionBook = book
             } label: {
-                Text("Begin Session")
+                Text("Continue Reading")
                     .font(.system(.body, design: .serif, weight: .medium))
                     .foregroundStyle(Color.paper)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 13)
                     .background(Color.charcoal, in: .rect(cornerRadius: 12))
             }
             .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
@@ -229,10 +239,8 @@ struct HomeView: View {
     private func lastSessionBlock(_ session: ReadingSession) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Last session")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color.secondaryText)
-                .textCase(.uppercase)
-                .kerning(0.8)
+                .font(.system(size: 11, weight: .regular))
+                .foregroundStyle(Color.secondaryText.opacity(0.7))
 
             Text(sessionDescription(session))
                 .font(.system(.subheadline, design: .serif))
@@ -241,19 +249,20 @@ struct HomeView: View {
     }
 
     private func sessionDescription(_ session: ReadingSession) -> String {
-        let duration = "\(session.durationMinutes) min"
+        let minutes = session.durationMinutes
+        let duration = minutes == 1 ? "1 minute" : "\(minutes) minutes"
         let when: String
         let cal = Calendar.current
         if cal.isDateInToday(session.startedAt) {
             let f = DateFormatter(); f.dateFormat = "HH:mm"
-            when = "Today, \(f.string(from: session.startedAt))"
+            when = "Today at \(f.string(from: session.startedAt))"
         } else if cal.isDateInYesterday(session.startedAt) {
             let f = DateFormatter(); f.dateFormat = "HH:mm"
-            when = "Yesterday, \(f.string(from: session.startedAt))"
+            when = "Yesterday at \(f.string(from: session.startedAt))"
         } else {
-            let f = DateFormatter(); f.dateFormat = "d MMM, HH:mm"
+            let f = DateFormatter(); f.dateFormat = "d MMM 'at' HH:mm"
             when = f.string(from: session.startedAt)
         }
-        return "\(duration) — \(when)"
+        return "\(duration) · \(when)"
     }
 }

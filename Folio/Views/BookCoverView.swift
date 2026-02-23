@@ -18,11 +18,25 @@ struct BookCoverView: View {
                 .clipShape(.rect(cornerRadius: cornerRadius))
         } else {
             RoundedRectangle(cornerRadius: cornerRadius)
-                .fill(Color.warmAccent.opacity(0.3))
+                .fill(Color.coverPlaceholder)
+                .overlay {
+                    // Faint vertical spine line
+                    HStack {
+                        Rectangle()
+                            .fill(Color.warmAccent.opacity(0.08))
+                            .frame(width: 1)
+                            .padding(.leading, 8)
+                        Spacer()
+                    }
+                }
                 .overlay {
                     Image(systemName: "book.closed")
                         .font(.title3)
-                        .foregroundStyle(Color.secondaryText)
+                        .foregroundStyle(Color.secondaryText.opacity(0.6))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(Color.warmAccent.opacity(0.25), lineWidth: 1)
                 }
         }
     }
