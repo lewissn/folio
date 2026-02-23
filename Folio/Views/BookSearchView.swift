@@ -106,7 +106,7 @@ struct BookSearchView: View {
             }
             .confirmationDialog("Add to Library", isPresented: $showAddOptions, presenting: selectedResult) { result in
                 Button("Currently Reading") { addBook(result, status: .reading) }
-                Button("Already Read") { addBook(result, status: .read) }
+                Button("Already Read") { addBook(result, status: .historicalRead) }
                 Button("Paused") { addBook(result, status: .paused) }
                 Button("Cancel", role: .cancel) { }
             }
@@ -155,7 +155,8 @@ struct BookSearchView: View {
             subjects: result.subjects,
             status: status,
             startedAt: status == .reading ? Date() : nil,
-            finishedAt: status == .read ? Date() : nil
+            finishedAt: (status == .read || status == .historicalRead) ? Date() : nil,
+            pageCount: result.pageCount
         )
         modelContext.insert(book)
         dismiss()

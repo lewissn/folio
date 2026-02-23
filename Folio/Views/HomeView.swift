@@ -7,6 +7,8 @@ struct HomeView: View {
     @Query(filter: #Predicate<Book> { $0.statusRaw == "reading" }, sort: \Book.createdAt, order: .reverse)
     private var readingBooks: [Book]
 
+    @Query private var allBooks: [Book]
+
     @Query(sort: \ReadingSession.startedAt, order: .reverse)
     private var allSessions: [ReadingSession]
 
@@ -16,7 +18,6 @@ struct HomeView: View {
 
     private let timeOfDay = TimeOfDay.current
 
-    // Most recently opened reading book
     private var currentBook: Book? {
         readingBooks.max(by: {
             ($0.lastOpenedAt ?? $0.startedAt ?? .distantPast) <
@@ -36,43 +37,35 @@ struct HomeView: View {
         }
     }
 
-    private var insightText: String? {
-        guard !allSessions.isEmpty else { return nil }
-        let recentMoods = allSessions.prefix(10).compactMap { $0.moodWord }
-        if let mood = recentMoods.mostFrequent {
-            return "Recently, your sessions tend to feel \(mood)."
-        }
-        let totalMinutes = allSessions.reduce(0) { $0 + $1.durationMinutes }
-        let avg = totalMinutes / max(allSessions.count, 1)
-        if avg > 0 && avg < 10 {
-            return "You've been reading in short bursts."
-        } else if avg >= 10 {
-            return "Your sessions tend to be \(avg < 20 ? "brief" : "substantial")."
-        }
-        return nil
+    private var dynamicInsight: String? {
+        ReadingBehaviourEngine.generateHomeInsight(books: allBooks, sessions: allSessions)
+    }
+
+    private var temporalLine: String? {
+        ReadingBehaviourEngine.generateTemporalLine(sessions: allSessions)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
 
-                // 1 + 2 · Context line + title
-                VStack(alignment: .leading, spacing: 7) {
+                // Title + greeting — tightened typographically
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Folio")
+                        .font(.serifTitle(.title))
+                        .tracking(-0.3)
+                        .foregroundStyle(Color.charcoal)
+
                     Text(greeting)
                         .font(.system(size: 13, weight: .regular))
                         .foregroundStyle(Color.secondaryText)
                         .lineSpacing(2)
-
-                    Text("Folio")
-                        .font(.serifLargeTitle())
-                        .tracking(0.5)
-                        .foregroundStyle(Color.charcoal)
                 }
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 8)
                 .animation(.easeInOut(duration: 0.5), value: appeared)
 
-                // 3 · Primary focus card
+                // Primary focus card
                 Group {
                     if let book = currentBook {
                         currentBookCard(book)
@@ -80,22 +73,34 @@ struct HomeView: View {
                         emptyState
                     }
                 }
-                .padding(.top, 22)
+                .padding(.top, 20)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 6)
                 .animation(.easeInOut(duration: 0.5).delay(0.15), value: appeared)
 
-                // 4 · Insight line (sans — intentional contrast to book content)
-                if let insight = insightText {
+                // Dynamic insight line
+                if let insight = dynamicInsight {
                     Text(insight)
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .serif))
                         .foregroundStyle(Color.secondaryText)
-                        .padding(.top, 18)
+                        .lineSpacing(2)
+                        .padding(.top, 16)
                         .opacity(appeared ? 1 : 0)
                         .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
                 }
 
-                // "N other books in progress" link
+                // Temporal awareness
+                if let temporal = temporalLine, dynamicInsight == nil {
+                    Text(temporal)
+                        .font(.system(.subheadline, design: .serif))
+                        .foregroundStyle(Color.secondaryText.opacity(0.8))
+                        .lineSpacing(2)
+                        .padding(.top, 16)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
+                }
+
+                // Other books link
                 if otherBooksCount > 0 {
                     Button {
                         selectedTab = 1
@@ -110,7 +115,7 @@ struct HomeView: View {
                     .animation(.easeInOut(duration: 0.5).delay(0.3), value: appeared)
                 }
 
-                // 5 + 6 · Divider + last session (only when a book is active)
+                // Divider + last session
                 if currentBook != nil {
                     GeometryReader { geo in
                         Rectangle()
@@ -130,7 +135,6 @@ struct HomeView: View {
                     }
                 }
 
-                // 7 · Breathing space
                 Spacer(minLength: 40)
             }
             .padding(.horizontal)
@@ -151,63 +155,66 @@ struct HomeView: View {
     // MARK: — Subviews
 
     private func currentBookCard(_ book: Book) -> some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .top, spacing: 16) {
-                BookCoverView(coverURL: book.coverURL)
-                    .frame(width: 80, height: 120)
-                    .shadow(
-                        color: .black.opacity(breathePhase ? 0.05 : 0.02),
-                        radius: breathePhase ? 10 : 6,
-                        y: breathePhase ? 5 : 3
-                    )
+        HStack(alignment: .top, spacing: 0) {
+            // Cover fills card height
+            BookCoverView(coverURL: book.coverURL, cornerRadius: 0)
+                .frame(width: 100)
+                .clipped()
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(book.title)
-                        .font(.serifHeadline())
-                        .foregroundStyle(Color.charcoal)
-                        .lineLimit(2)
+            // Right side: metadata + button
+            VStack(alignment: .leading, spacing: 8) {
+                Text(book.title)
+                    .font(.serifHeadline())
+                    .foregroundStyle(Color.charcoal)
+                    .lineLimit(2)
 
-                    if !book.authors.isEmpty {
-                        Text(book.authors.joined(separator: ", "))
-                            .font(.system(.subheadline, design: .serif))
-                            .foregroundStyle(Color.secondaryText)
-                    }
-
-                    if !book.sessions.isEmpty {
-                        let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("SESSIONS")
-                                .font(.system(size: 9, weight: .semibold))
-                                .foregroundStyle(Color.secondaryText.opacity(0.7))
-                                .kerning(0.6)
-                            Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s") · \(totalMin) min total")
-                                .font(.system(size: 11, design: .serif))
-                                .foregroundStyle(Color.warmAccent)
-                        }
-                        .padding(.top, 2)
-                    }
+                if !book.authors.isEmpty {
+                    Text(book.authors.joined(separator: ", "))
+                        .font(.system(.subheadline, design: .serif))
+                        .foregroundStyle(Color.secondaryText)
                 }
 
-                Spacer()
-            }
+                if !book.sessions.isEmpty {
+                    let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("SESSIONS")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(Color.secondaryText.opacity(0.7))
+                            .kerning(0.6)
+                        Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s") · \(totalMin) min")
+                            .font(.system(size: 11, design: .serif))
+                            .foregroundStyle(Color.warmAccent)
+                    }
+                    .padding(.top, 2)
+                }
 
-            Button {
-                sessionBook = book
-            } label: {
-                Text("Continue Reading")
-                    .font(.system(.body, design: .serif, weight: .medium))
-                    .foregroundStyle(Color.paper)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 13)
-                    .background(Color.charcoal, in: .rect(cornerRadius: 12))
+                Spacer(minLength: 8)
+
+                Button {
+                    sessionBook = book
+                } label: {
+                    Text("Continue Reading")
+                        .font(.system(.subheadline, design: .serif, weight: .medium))
+                        .foregroundStyle(Color.paper)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                        .background(Color.charcoal, in: .rect(cornerRadius: 10))
+                }
+                .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
             }
-            .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
+            .padding(16)
         }
-        .padding(20)
+        .frame(minHeight: 150)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 14)
                 .fill(Color.elevatedSurface)
                 .stroke(Color.hairline, lineWidth: 1)
+        )
+        .clipShape(.rect(cornerRadius: 14))
+        .shadow(
+            color: .black.opacity(breathePhase ? 0.04 : 0.02),
+            radius: breathePhase ? 8 : 5,
+            y: breathePhase ? 4 : 2
         )
     }
 
@@ -230,7 +237,7 @@ struct HomeView: View {
         .padding(.vertical, 28)
         .padding(.horizontal, 20)
         .background(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 14)
                 .fill(Color.elevatedSurface)
                 .stroke(Color.hairline, lineWidth: 1)
         )

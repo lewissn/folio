@@ -39,7 +39,7 @@ struct BookDetailView: View {
                                     .foregroundStyle(Color.secondaryText)
                             }
 
-                            Text(book.status.rawValue.capitalized)
+                            Text(book.status == .historicalRead ? "Read" : book.status.rawValue.capitalized)
                                 .font(.serifCaption())
                                 .foregroundStyle(Color.secondaryText)
                                 .padding(.horizontal, 8)
@@ -171,7 +171,11 @@ struct BookDetailView: View {
                 if book.startedAt == nil { book.startedAt = Date() }
             }
             Button("Finished Reading") {
-                book.status = .read
+                if book.sessions.isEmpty {
+                    book.status = .historicalRead
+                } else {
+                    book.status = .read
+                }
                 book.finishedAt = Date()
             }
             Button("Paused") {

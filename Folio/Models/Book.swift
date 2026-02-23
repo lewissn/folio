@@ -5,6 +5,7 @@ nonisolated enum BookStatus: String, Codable, Sendable, CaseIterable {
     case reading
     case read
     case paused
+    case historicalRead
 }
 
 nonisolated enum PauseReason: String, Codable, Sendable, CaseIterable, Identifiable {
@@ -36,6 +37,7 @@ class Book {
     var pauseReasonTags: [String]
     var createdAt: Date
     var lastOpenedAt: Date?
+    var pageCount: Int?
 
     @Relationship(deleteRule: .cascade, inverse: \ReadingSession.book)
     var sessions: [ReadingSession] = []
@@ -50,6 +52,18 @@ class Book {
     var pauseReasons: [PauseReason] {
         get { pauseReasonTags.compactMap { PauseReason(rawValue: $0) } }
         set { pauseReasonTags = newValue.map(\.rawValue) }
+    }
+
+    /// True if this book was logged historically (no session data).
+    @Transient
+    var isHistorical: Bool {
+        status == .historicalRead || (status == .read && sessions.isEmpty)
+    }
+
+    /// True if this book was actively tracked and completed with session data.
+    @Transient
+    var isActivelyCompleted: Bool {
+        status == .read && !sessions.isEmpty
     }
 
     @Transient
@@ -88,6 +102,11 @@ class Book {
         return nil
     }
 
+    @Transient
+    var totalSessionMinutes: Int {
+        sessions.reduce(0) { $0 + $1.durationMinutes }
+    }
+
     init(
         title: String,
         authors: [String] = [],
@@ -100,7 +119,8 @@ class Book {
         status: BookStatus = .reading,
         rating: Int? = nil,
         startedAt: Date? = nil,
-        finishedAt: Date? = nil
+        finishedAt: Date? = nil,
+        pageCount: Int? = nil
     ) {
         self.title = title
         self.authors = authors
@@ -117,5 +137,6 @@ class Book {
         self.pauseReasonTags = []
         self.createdAt = Date()
         self.lastOpenedAt = nil
+        self.pageCount = pageCount
     }
 }
