@@ -38,8 +38,10 @@ workflows:
             COMPILER_INDEX_STORE_ENABLE=NO
       - name: Export IPA
         script: |
-          xcode-project build-ipa \
-            --archive-path build/Folio.xcarchive
+          xcodebuild -exportArchive \
+            -archivePath build/Folio.xcarchive \
+            -exportPath build/ios/ipa \
+            -exportOptionsPlist ExportOptions.plist
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
