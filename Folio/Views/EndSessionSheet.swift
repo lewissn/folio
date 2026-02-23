@@ -23,7 +23,7 @@ struct EndSessionSheet: View {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Duration")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                         Text("\(durationMinutes) minutes")
                             .font(.serifTitle(.title3))
@@ -34,10 +34,10 @@ struct EndSessionSheet: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Pages read")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                         TextField("Optional", text: $pagesRead)
-                            .font(.body)
+                            .font(.serifBody())
                             .keyboardType(.numberPad)
                             .foregroundStyle(Color.charcoal)
                     }
@@ -46,10 +46,10 @@ struct EndSessionSheet: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Chapter or page")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                         TextField("e.g. Chapter 4, p.112", text: $chapterReference)
-                            .font(.body)
+                            .font(.serifBody())
                             .foregroundStyle(Color.charcoal)
                     }
 
@@ -57,10 +57,10 @@ struct EndSessionSheet: View {
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Reflection")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                         TextField("A thought from this session...", text: $reflection, axis: .vertical)
-                            .font(.body)
+                            .font(.serifBody())
                             .lineLimit(3...6)
                             .foregroundStyle(Color.charcoal)
                     }
@@ -69,7 +69,7 @@ struct EndSessionSheet: View {
 
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Mood")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
 
                         HStack(spacing: 8) {
@@ -80,7 +80,7 @@ struct EndSessionSheet: View {
                                     }
                                 } label: {
                                     Text(mood)
-                                        .font(.subheadline)
+                                        .font(.system(.subheadline, design: .serif))
                                         .foregroundStyle(selectedMood == mood ? Color.paper : Color.charcoal)
                                         .padding(.horizontal, 14)
                                         .padding(.vertical, 8)

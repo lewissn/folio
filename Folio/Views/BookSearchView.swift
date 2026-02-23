@@ -21,7 +21,7 @@ struct BookSearchView: View {
                             .font(.system(size: 32))
                             .foregroundStyle(Color.warmAccent)
                         Text("Search by title or author")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -32,17 +32,17 @@ struct BookSearchView: View {
                 } else if searchError && !isSearching {
                     VStack(spacing: 8) {
                         Text("Search unavailable")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                         Text("Check your connection and try again.")
-                            .font(.caption)
+                            .font(.serifCaption())
                             .foregroundStyle(Color.secondaryText)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if results.isEmpty && !searchText.isEmpty && !isSearching {
                     VStack(spacing: 8) {
                         Text("No results found")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -123,14 +123,14 @@ struct BookSearchView: View {
 
                 if !result.authors.isEmpty {
                     Text(result.authors.joined(separator: ", "))
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .serif))
                         .foregroundStyle(Color.secondaryText)
                         .lineLimit(1)
                 }
 
                 if let year = result.publishYear {
                     Text(String(year))
-                        .font(.caption)
+                        .font(.serifCaption())
                         .foregroundStyle(Color.secondaryText)
                 }
             }

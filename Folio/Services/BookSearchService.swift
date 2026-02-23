@@ -123,6 +123,7 @@ nonisolated enum BookSearchService {
         if result.publishYear != nil { score += 10 }
         if result.language == "en" { score += 20 }
         if result.pageCount != nil { score += 5 }
+        if result.coverURL != nil { score += 10 }
 
         return score
     }

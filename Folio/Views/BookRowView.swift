@@ -17,14 +17,14 @@ struct BookRowView: View {
 
                 if !book.authors.isEmpty {
                     Text(book.authors.joined(separator: ", "))
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .serif))
                         .foregroundStyle(Color.secondaryText)
                         .lineLimit(1)
                 }
 
                 if let year = book.publishYear {
                     Text(String(year))
-                        .font(.caption)
+                        .font(.serifCaption())
                         .foregroundStyle(Color.secondaryText)
                 }
             }

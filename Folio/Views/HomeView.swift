@@ -44,7 +44,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 32) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(greeting)
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .serif))
                         .foregroundStyle(Color.secondaryText)
 
                     Text("Folio")
@@ -108,14 +108,14 @@ struct HomeView: View {
 
                     if !book.authors.isEmpty {
                         Text(book.authors.joined(separator: ", "))
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
                     }
 
                     if !book.sessions.isEmpty {
                         let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
                         Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s"), \(totalMin) min")
-                            .font(.caption)
+                            .font(.serifCaption())
                             .foregroundStyle(Color.warmAccent)
                             .padding(.top, 2)
                     }
@@ -128,7 +128,7 @@ struct HomeView: View {
                 sessionBook = book
             } label: {
                 Text("Begin Session")
-                    .font(.system(.body, weight: .medium))
+                    .font(.system(.body, design: .serif, weight: .medium))
                     .foregroundStyle(Color.paper)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -156,7 +156,7 @@ struct HomeView: View {
                 .foregroundStyle(Color.charcoal)
 
             Text("Add a book from the Library to begin.")
-                .font(.subheadline)
+                .font(.system(.subheadline, design: .serif))
                 .foregroundStyle(Color.secondaryText)
                 .multilineTextAlignment(.center)
         }

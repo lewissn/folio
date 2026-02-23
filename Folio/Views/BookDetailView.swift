@@ -28,19 +28,19 @@ struct BookDetailView: View {
 
                         if !book.authors.isEmpty {
                             Text(book.authors.joined(separator: ", "))
-                                .font(.subheadline)
+                                .font(.system(.subheadline, design: .serif))
                                 .foregroundStyle(Color.secondaryText)
                         }
 
                         HStack(spacing: 8) {
                             if let year = book.publishYear {
                                 Text(String(year))
-                                    .font(.caption)
+                                    .font(.serifCaption())
                                     .foregroundStyle(Color.secondaryText)
                             }
 
                             Text(book.status.rawValue.capitalized)
-                                .font(.caption)
+                                .font(.serifCaption())
                                 .foregroundStyle(Color.secondaryText)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
@@ -75,7 +75,7 @@ struct BookDetailView: View {
                     } label: {
                         HStack {
                             Text("Change Status")
-                                .font(.system(.body, weight: .medium))
+                                .font(.system(.body, design: .serif, weight: .medium))
                             Spacer()
                             Image(systemName: "chevron.right")
                                 .font(.caption)
@@ -91,7 +91,7 @@ struct BookDetailView: View {
                     } label: {
                         HStack {
                             Text("Rate This Book")
-                                .font(.system(.body, weight: .medium))
+                                .font(.system(.body, design: .serif, weight: .medium))
                             Spacer()
                             if let r = book.rating, r > 0 {
                                 HStack(spacing: 1) {
@@ -115,11 +115,11 @@ struct BookDetailView: View {
                 if let desc = book.bookDescription, !desc.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("About")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
 
                         Text(desc)
-                            .font(.body)
+                            .font(.serifBody())
                             .foregroundStyle(Color.charcoal)
                             .lineSpacing(2)
                             .lineLimit(10)
@@ -133,13 +133,13 @@ struct BookDetailView: View {
                 if !book.pauseReasonTags.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Why paused")
-                            .font(.subheadline)
+                            .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
 
                         HStack(spacing: 6) {
                             ForEach(book.pauseReasonTags, id: \.self) { tag in
                                 Text(tag)
-                                    .font(.caption)
+                                    .font(.serifCaption())
                                     .foregroundStyle(Color.charcoal)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
@@ -153,7 +153,7 @@ struct BookDetailView: View {
                     showDeleteConfirm = true
                 } label: {
                     Text("Remove from Library")
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .serif))
                         .foregroundStyle(.red.opacity(0.7))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -215,22 +215,22 @@ struct BookDetailView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 8) {
                         Text(session.startedAt.formatted(date: .abbreviated, time: .omitted))
-                            .font(.caption)
+                            .font(.serifCaption())
                             .foregroundStyle(Color.secondaryText)
 
                         Text("\(session.durationMinutes) min")
-                            .font(.caption)
+                            .font(.serifCaption())
                             .foregroundStyle(Color.secondaryText)
 
                         if let pages = session.pagesRead {
                             Text("\(pages) pages")
-                                .font(.caption)
+                                .font(.serifCaption())
                                 .foregroundStyle(Color.secondaryText)
                         }
 
                         if let mood = session.moodWord {
                             Text(mood)
-                                .font(.caption)
+                                .font(.serifCaption())
                                 .foregroundStyle(Color.warmAccent)
                         }
                     }
@@ -288,7 +288,7 @@ struct BookDetailView: View {
                 showRating = false
             } label: {
                 Text("Save")
-                    .font(.system(.body, weight: .medium))
+                    .font(.system(.body, design: .serif, weight: .medium))
                     .foregroundStyle(Color.paper)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)

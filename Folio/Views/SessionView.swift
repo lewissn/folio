@@ -36,7 +36,7 @@ struct SessionView: View {
 
             if !book.authors.isEmpty {
                 Text(book.authors.joined(separator: ", "))
-                    .font(.subheadline)
+                    .font(.system(.subheadline, design: .serif))
                     .foregroundStyle(Color.secondaryText)
                     .padding(.top, 4)
                     .opacity(appeared ? 1 : 0)
@@ -59,7 +59,7 @@ struct SessionView: View {
                 showEndSheet = true
             } label: {
                 Text("tap to end")
-                    .font(.system(.subheadline, weight: .medium))
+                    .font(.system(.subheadline, design: .serif, weight: .medium))
                     .foregroundStyle(Color.secondaryText)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
