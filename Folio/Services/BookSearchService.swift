@@ -62,7 +62,10 @@ nonisolated enum BookSearchService {
 
         guard let url = URL(string: urlString) else { return [] }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        let (data, urlResponse) = try await URLSession.shared.data(from: url)
+        guard let httpResponse = urlResponse as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
         let response = try JSONDecoder().decode(GoogleBooksResponse.self, from: data)
 
         guard let items = response.items else { return [] }

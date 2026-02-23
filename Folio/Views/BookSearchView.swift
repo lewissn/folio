@@ -8,6 +8,7 @@ struct BookSearchView: View {
     @State private var searchText: String = ""
     @State private var results: [SearchResult] = []
     @State private var isSearching: Bool = false
+    @State private var searchError: Bool = false
     @State private var selectedResult: SearchResult?
     @State private var showAddOptions: Bool = false
 
@@ -28,6 +29,16 @@ struct BookSearchView: View {
                     ProgressView()
                         .tint(Color.warmAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if searchError && !isSearching {
+                    VStack(spacing: 8) {
+                        Text("Search unavailable")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.secondaryText)
+                        Text("Check your connection and try again.")
+                            .font(.caption)
+                            .foregroundStyle(Color.secondaryText)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if results.isEmpty && !searchText.isEmpty && !isSearching {
                     VStack(spacing: 8) {
                         Text("No results found")
@@ -70,16 +81,23 @@ struct BookSearchView: View {
                 let trimmed = searchText.trimmingCharacters(in: .whitespaces)
                 guard !trimmed.isEmpty else {
                     results = []
+                    searchError = false
                     isSearching = false
                     return
                 }
                 isSearching = true
+                searchError = false
                 try? await Task.sleep(for: .milliseconds(500))
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else {
+                    isSearching = false
+                    return
+                }
                 do {
                     results = try await BookSearchService.search(query: trimmed)
+                    searchError = false
                 } catch {
                     results = []
+                    searchError = true
                 }
                 isSearching = false
             }

@@ -47,7 +47,7 @@ struct HomeView: View {
                         .font(.subheadline)
                         .foregroundStyle(Color.secondaryText)
 
-                    Text("Reading Room")
+                    Text("Folio")
                         .font(.serifLargeTitle())
                         .foregroundStyle(Color.charcoal)
                 }
