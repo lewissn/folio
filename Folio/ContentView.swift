@@ -6,7 +6,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Home", systemImage: "book.closed", value: 0) {
-                HomeView()
+                HomeView(selectedTab: $selectedTab)
             }
             Tab("Library", systemImage: "books.vertical", value: 1) {
                 LibraryView()
