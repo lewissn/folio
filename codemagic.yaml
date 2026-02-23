@@ -30,7 +30,8 @@ workflows:
             -archivePath build/Folio.xcarchive \
             CODE_SIGN_STYLE=Manual \
             DEVELOPMENT_TEAM=B54VQ6PV6L \
-            PROVISIONING_PROFILE_SPECIFIER="Folio App Store"
+            PROVISIONING_PROFILE_SPECIFIER="Folio App Store" \
+            "PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*][target=ReadingRoomActivity]"="Folio Activity App Store"
       - name: Export IPA
         script: |
           xcode-project build-ipa \
