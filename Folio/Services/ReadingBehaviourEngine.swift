@@ -333,9 +333,9 @@ nonisolated enum ReadingBehaviourEngine {
         let now = Date()
         let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
 
-        let monthSessions = sessions.filter {
-            $0.startedAt >= startOfMonth &&
-            !(books.first(where: { b in b.title == $0.book?.title })?.isHistorical ?? false)
+        let monthSessions = sessions.filter { session in
+            session.startedAt >= startOfMonth &&
+            !(books.first(where: { $0.title == session.book?.title })?.isHistorical ?? false)
         }
 
         let totalMinutes = monthSessions.reduce(0) { $0 + $1.durationMinutes }
