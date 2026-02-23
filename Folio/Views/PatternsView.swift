@@ -207,27 +207,30 @@ struct PatternsView: View {
                     }
 
                     // MARK: Suggestions (specific books + wishlist)
-                    if suggestionsLoading || !bookSuggestions.isEmpty {
-                        divider
+                    divider
 
-                        sectionBlock {
-                            VStack(alignment: .leading, spacing: 12) {
-                                sectionHeader("Suggestions")
+                    sectionBlock {
+                        VStack(alignment: .leading, spacing: 12) {
+                            sectionHeader("Suggestions")
 
-                                if suggestionsLoading {
-                                    HStack(spacing: 8) {
-                                        ProgressView()
-                                            .tint(Color.warmAccent)
-                                            .scaleEffect(0.8)
-                                        Text("Finding books for you…")
-                                            .font(.serifCaption())
-                                            .foregroundStyle(Color.secondaryText)
-                                    }
+                            if suggestionsLoading {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .tint(Color.warmAccent)
+                                        .scaleEffect(0.8)
+                                    Text("Finding books for you…")
+                                        .font(.serifCaption())
+                                        .foregroundStyle(Color.secondaryText)
+                                }
+                                .padding(.vertical, 12)
+                            } else if bookSuggestions.isEmpty {
+                                Text("We need a bit more to go on: add at least one book and, if you can, log a reading session or two. Suggestions are based on your authors and genres.")
+                                    .font(.serifCaption())
+                                    .foregroundStyle(Color.secondaryText)
                                     .padding(.vertical, 12)
-                                } else {
-                                    ForEach(bookSuggestions) { suggestion in
-                                        suggestionRow(suggestion)
-                                    }
+                            } else {
+                                ForEach(bookSuggestions) { suggestion in
+                                    suggestionRow(suggestion)
                                 }
                             }
                         }

@@ -102,11 +102,25 @@ nonisolated enum BookSearchService {
     /// Fetch one recommendation using a raw Google Books query (e.g. inauthor:X subject:Y).
     /// Returns first result that passes banned-term filter; use for suggestions.
     static func recommendOne(rawQuery: String) async throws -> SearchResult? {
-        let results = try await searchGoogleBooksWithRawQuery(rawQuery, maxResults: 10)
-        return results.first { result in
+        try await recommendOne(rawQuery: rawQuery, excludingVolumeIds: [], excludingTitleAuthorKeys: [])
+    }
+
+    /// Same as recommendOne but skips any book already in the given sets (so suggestions don’t repeat your library).
+    static func recommendOne(
+        rawQuery: String,
+        excludingVolumeIds: Set<String>,
+        excludingTitleAuthorKeys: Set<String>
+    ) async throws -> SearchResult? {
+        let results = try await searchGoogleBooksWithRawQuery(rawQuery, maxResults: 20)
+        for result in results {
             let fullText = "\(result.title) \(result.authors.joined(separator: " ")) \(result.subjects.joined(separator: " "))".lowercased()
-            return !bannedTerms.contains { fullText.contains($0) }
+            guard !bannedTerms.contains(where: { fullText.contains($0) }) else { continue }
+            if excludingVolumeIds.contains(result.id) { continue }
+            let key = "\(result.title)|\(result.authors.joined(separator: ","))"
+            if excludingTitleAuthorKeys.contains(key) { continue }
+            return result
         }
+        return nil
     }
 
     // MARK: - Google Books (Primary)

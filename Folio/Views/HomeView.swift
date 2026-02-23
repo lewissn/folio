@@ -164,62 +164,57 @@ struct HomeView: View {
     // MARK: — Subviews
 
     private func currentBookCard(_ book: Book) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Cover — fixed silhouette so every cover fills the same slot
-            BookCoverView(coverURL: book.coverURL, cornerRadius: 11)
-                .frame(width: 98, height: 132)
+        VStack(spacing: 0) {
+            // Cover — single focal point, fixed aspect so height is always uniform
+            BookCoverView(coverURL: book.coverURL, cornerRadius: 12)
+                .frame(width: 120, height: 180)
                 .clipped()
-                .shadow(
-                    color: .black.opacity(breathePhase ? 0.05 : 0.02),
-                    radius: breathePhase ? 8 : 5,
-                    y: breathePhase ? 4 : 2
-                )
+                .shadow(color: .black.opacity(0.06), radius: 12, y: 4)
+                .padding(.top, 20)
+                .padding(.bottom, 18)
 
-            // Right side: metadata + button
-            VStack(alignment: .leading, spacing: 6) {
-                Text(book.title)
-                    .font(.serifHeadline())
-                    .foregroundStyle(Color.charcoal)
-                    .lineLimit(2)
+            // Title and author — calm hierarchy
+            Text(book.title)
+                .font(.system(.body, design: .serif, weight: .semibold))
+                .foregroundStyle(Color.charcoal)
+                .lineLimit(2)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
-                if !book.authors.isEmpty {
-                    Text(book.authors.joined(separator: ", "))
-                        .font(.system(.subheadline, design: .serif))
-                        .foregroundStyle(Color.secondaryText)
-                }
-
-                if !book.sessions.isEmpty {
-                    let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("SESSIONS")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(Color.secondaryText.opacity(0.7))
-                            .kerning(0.6)
-                        Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s") · \(totalMin) min")
-                            .font(.system(size: 11, design: .serif))
-                            .foregroundStyle(Color.warmAccent)
-                    }
-                    .padding(.top, 2)
-                }
-
-                Spacer(minLength: 6)
-
-                Button {
-                    sessionBook = book
-                } label: {
-                    Text("Continue Reading")
-                        .font(.system(.subheadline, design: .serif, weight: .medium))
-                        .foregroundStyle(Color.paper)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 11)
-                        .background(Color.charcoal, in: .rect(cornerRadius: 10))
-                }
-                .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
+            if !book.authors.isEmpty {
+                Text(book.authors.joined(separator: ", "))
+                    .font(.system(.subheadline, design: .serif))
+                    .foregroundStyle(Color.secondaryText)
+                    .padding(.top, 4)
             }
+
+            if !book.sessions.isEmpty {
+                let totalMin = book.sessions.reduce(0) { $0 + $1.durationMinutes }
+                Text("\(book.sessions.count) session\(book.sessions.count == 1 ? "" : "s") · \(totalMin) min")
+                    .font(.system(size: 11, design: .serif))
+                    .foregroundStyle(Color.secondaryText.opacity(0.85))
+                    .padding(.top, 6)
+            }
+
+            // Continue Reading — beneath the cover, one clear action
+            Button {
+                sessionBook = book
+            } label: {
+                Text("Continue Reading")
+                    .font(.system(.subheadline, design: .serif, weight: .medium))
+                    .foregroundStyle(Color.paper)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.charcoal, in: .rect(cornerRadius: 12))
+            }
+            .padding(.top, 20)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+            .sensoryFeedback(.impact(weight: .light), trigger: sessionBook)
         }
-        .padding(18)
+        .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color.elevatedSurface)
                 .stroke(Color.hairline, lineWidth: 1)
         )

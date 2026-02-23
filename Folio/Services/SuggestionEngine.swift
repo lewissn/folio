@@ -41,34 +41,29 @@ nonisolated enum SuggestionEngine {
     static func fetchBookSuggestions(books: [Book], sessions: [ReadingSession]) async -> [BookSuggestion] {
         let profile = ReadingBehaviourEngine.computeProfile(books: books, sessions: sessions)
         let existingVolumeIds = Set(books.compactMap { $0.volumeId })
-        let existingTitleAuthor = Set(books.map { "\($0.title)|\($0.authors.joined(separator: ","))" })
+        let existingTitleAuthorKeys = Set(books.map { "\($0.title)|\($0.authors.joined(separator: ","))" })
         var results: [BookSuggestion] = []
 
-        func isAlreadyInLibrary(_ result: SearchResult) -> Bool {
-            if existingVolumeIds.contains(result.id) { return true }
-            let key = "\(result.title)|\(result.authors.joined(separator: ","))"
-            return existingTitleAuthor.contains(key)
-        }
-
-        // Aligned: top author + subject
-        if let alignedResult = await fetchAlignedBook(profile: profile, books: books) {
-            if !isAlreadyInLibrary(alignedResult) {
-                results.append(bookSuggestion(from: alignedResult, reason: alignedReason(profile: profile), mode: .aligned))
-            }
+        // Aligned: top author + subject (skip books already in library)
+        if let alignedResult = try? await fetchAlignedBook(profile: profile, excludingVolumeIds: existingVolumeIds, excludingTitleAuthorKeys: existingTitleAuthorKeys) {
+            results.append(bookSuggestion(from: alignedResult, reason: alignedReason(profile: profile), mode: .aligned))
         }
 
         // Adjacent: one step outside genre
-        if let adjacentResult = await fetchAdjacentBook(profile: profile, books: books) {
-            if !isAlreadyInLibrary(adjacentResult), !results.contains(where: { $0.id == adjacentResult.id }) {
-                results.append(bookSuggestion(from: adjacentResult, reason: adjacentReason(profile: profile), mode: .adjacent))
-            }
+        if let adjacentResult = try? await fetchAdjacentBook(profile: profile, excludingVolumeIds: existingVolumeIds, excludingTitleAuthorKeys: existingTitleAuthorKeys),
+           !results.contains(where: { $0.id == adjacentResult.id }) {
+            results.append(bookSuggestion(from: adjacentResult, reason: adjacentReason(profile: profile), mode: .adjacent))
         }
 
         // Wildcard: emotionally aligned genre
-        if let wildcardResult = await fetchWildcardBook(profile: profile, books: books) {
-            if !isAlreadyInLibrary(wildcardResult), !results.contains(where: { $0.id == wildcardResult.id }) {
-                results.append(bookSuggestion(from: wildcardResult, reason: "Something slightly outside your usual pattern, but emotionally aligned.", mode: .wildcard))
-            }
+        if let wildcardResult = try? await fetchWildcardBook(profile: profile, excludingVolumeIds: existingVolumeIds, excludingTitleAuthorKeys: existingTitleAuthorKeys),
+           !results.contains(where: { $0.id == wildcardResult.id }) {
+            results.append(bookSuggestion(from: wildcardResult, reason: "Something slightly outside your usual pattern, but emotionally aligned.", mode: .wildcard))
+        }
+
+        // Fallback for new/small library: one general suggestion so the section isn’t empty
+        if results.isEmpty, let fallback = try? await BookSearchService.recommendOne(rawQuery: "subject:literary fiction", excludingVolumeIds: existingVolumeIds, excludingTitleAuthorKeys: existingTitleAuthorKeys) {
+            results.append(bookSuggestion(from: fallback, reason: "A well-loved pick to get you started.", mode: .aligned))
         }
 
         return results
@@ -92,12 +87,17 @@ nonisolated enum SuggestionEngine {
         )
     }
 
-    private static func fetchAlignedBook(profile: ReadingBehaviourEngine.BehaviourProfile, books: [Book]) async -> SearchResult? {
+    private static func fetchAlignedBook(profile: ReadingBehaviourEngine.BehaviourProfile, excludingVolumeIds: Set<String>, excludingTitleAuthorKeys: Set<String>) async throws -> SearchResult? {
         guard let topAuthor = profile.topAuthors.first else { return nil }
         let subject = profile.topGenres.first?.genre.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "fiction"
         let authorEnc = topAuthor.author.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let query = "inauthor:\(authorEnc) subject:\(subject)"
-        return try? await BookSearchService.recommendOne(rawQuery: query)
+        // Prefer inauthor-only first so we get other works by same author; add subject if needed for variety
+        let query = "inauthor:\"\(topAuthor.author.replacingOccurrences(of: "\"", with: ""))\" subject:\(subject)"
+        if let result = try await BookSearchService.recommendOne(rawQuery: query, excludingVolumeIds: excludingVolumeIds, excludingTitleAuthorKeys: excludingTitleAuthorKeys) {
+            return result
+        }
+        // Fallback: author only (broader)
+        return try await BookSearchService.recommendOne(rawQuery: "inauthor:\"\(topAuthor.author.replacingOccurrences(of: "\"", with: ""))\"", excludingVolumeIds: excludingVolumeIds, excludingTitleAuthorKeys: excludingTitleAuthorKeys)
     }
 
     private static func alignedReason(profile: ReadingBehaviourEngine.BehaviourProfile) -> String {
@@ -105,7 +105,7 @@ nonisolated enum SuggestionEngine {
         return "You've read \(topAuthor.count) of their books and tend to return."
     }
 
-    private static func fetchAdjacentBook(profile: ReadingBehaviourEngine.BehaviourProfile, books: [Book]) async -> SearchResult? {
+    private static func fetchAdjacentBook(profile: ReadingBehaviourEngine.BehaviourProfile, excludingVolumeIds: Set<String>, excludingTitleAuthorKeys: Set<String>) async throws -> SearchResult? {
         guard let topGenre = profile.topGenres.first else { return nil }
         let existingGenres = Set(profile.topGenres.map { $0.genre.lowercased() })
         for (key, adjacents) in adjacencyMap {
@@ -113,14 +113,14 @@ nonisolated enum SuggestionEngine {
                 if let adj = adjacents.first(where: { !existingGenres.contains($0.lowercased()) }),
                    let enc = "\(adj) literary".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
                     let query = "subject:\(enc)"
-                    if let result = try? await BookSearchService.recommendOne(rawQuery: query) {
+                    if let result = try await BookSearchService.recommendOne(rawQuery: query, excludingVolumeIds: excludingVolumeIds, excludingTitleAuthorKeys: excludingTitleAuthorKeys) {
                         return result
                     }
                 }
             }
         }
         if let enc = profile.topGenres.first.map({ "\($0.genre) biography".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "biography" }) {
-            return try? await BookSearchService.recommendOne(rawQuery: "subject:\(enc)")
+            return try await BookSearchService.recommendOne(rawQuery: "subject:\(enc)", excludingVolumeIds: excludingVolumeIds, excludingTitleAuthorKeys: excludingTitleAuthorKeys)
         }
         return nil
     }
@@ -130,7 +130,7 @@ nonisolated enum SuggestionEngine {
         return "One step from \(top.genre.lowercased()) — a natural bridge."
     }
 
-    private static func fetchWildcardBook(profile: ReadingBehaviourEngine.BehaviourProfile, books: [Book]) async -> SearchResult? {
+    private static func fetchWildcardBook(profile: ReadingBehaviourEngine.BehaviourProfile, excludingVolumeIds: Set<String>, excludingTitleAuthorKeys: Set<String>) async throws -> SearchResult? {
         let existingGenres = Set(profile.topGenres.map { $0.genre.lowercased() })
         var emotionalScores: [String: Int] = [:]
         for (emotion, genres) in genreEmotionalMap {
@@ -153,7 +153,7 @@ nonisolated enum SuggestionEngine {
         let candidates = emotionalGenres.filter { !existingGenres.contains($0.lowercased()) }
         guard let pick = candidates.randomElement(),
               let enc = pick.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-        return try? await BookSearchService.recommendOne(rawQuery: "subject:\(enc)")
+        return try await BookSearchService.recommendOne(rawQuery: "subject:\(enc)", excludingVolumeIds: excludingVolumeIds, excludingTitleAuthorKeys: excludingTitleAuthorKeys)
     }
 
     // MARK: - Legacy (Abstract) Suggestions
