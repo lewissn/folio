@@ -8,7 +8,7 @@ struct BookSearchView: View {
     @State private var searchText: String = ""
     @State private var results: [SearchResult] = []
     @State private var isSearching: Bool = false
-    @State private var searchError: Bool = false
+    @State private var searchError: String? = nil
     @State private var selectedResult: SearchResult?
     @State private var showAddOptions: Bool = false
 
@@ -29,14 +29,16 @@ struct BookSearchView: View {
                     ProgressView()
                         .tint(Color.warmAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if searchError && !isSearching {
+                } else if searchError != nil && !isSearching {
                     VStack(spacing: 8) {
                         Text("Search unavailable")
                             .font(.system(.subheadline, design: .serif))
                             .foregroundStyle(Color.secondaryText)
-                        Text("Check your connection and try again.")
+                        Text(searchError ?? "Check your connection and try again.")
                             .font(.serifCaption())
                             .foregroundStyle(Color.secondaryText)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if results.isEmpty && !searchText.isEmpty && !isSearching {
@@ -81,12 +83,12 @@ struct BookSearchView: View {
                 let trimmed = searchText.trimmingCharacters(in: .whitespaces)
                 guard !trimmed.isEmpty else {
                     results = []
-                    searchError = false
+                    searchError = nil
                     isSearching = false
                     return
                 }
                 isSearching = true
-                searchError = false
+                searchError = nil
                 try? await Task.sleep(for: .milliseconds(500))
                 guard !Task.isCancelled else {
                     isSearching = false
@@ -94,10 +96,11 @@ struct BookSearchView: View {
                 }
                 do {
                     results = try await BookSearchService.search(query: trimmed)
-                    searchError = false
+                    searchError = nil
                 } catch {
+                    print("Search failed:", error.localizedDescription)
                     results = []
-                    searchError = true
+                    searchError = error.localizedDescription
                 }
                 isSearching = false
             }
